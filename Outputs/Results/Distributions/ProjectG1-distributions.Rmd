@@ -17,6 +17,7 @@ theme_set(theme_pander())
 ```
 
 ### Introduction
+
 Queuing is a feature of contemporary living that we often encounter. Queuing arises whenever a system must be used for service by several jobs or customers, whether it be at restaurants or through the use of modern technology, with both the arrival and the service timings are assumed to be at random. The study of queuing is significant because it provides both a theoretical framework for the type of service that we would anticipate from a system and how the system is constructed to provide some defined level of service. Simple queuing systems are characterized by naming (a) the arrival pattern, (b) the service mechanism, and (c) the queue discipline. The objective of this study is to observe a queuing system in action and prepare theoretical and simulation models that are used to estimate the impact of adjustments in the queue arrangement.
 
 
