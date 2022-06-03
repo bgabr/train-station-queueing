@@ -20,7 +20,7 @@ theme_set(theme_pander())
 Queuing is a feature of contemporary living that we often encounter. Queuing arises whenever a system must be used for service by several jobs or customers, whether it be at restaurants or through the use of modern technology, with both the arrival and the service timings are assumed to be at random. The study of queuing is significant because it provides both a theoretical framework for the type of service that we would anticipate from a system and how the system is constructed to provide some defined level of service. Simple queuing systems are characterized by naming (a) the arrival pattern, (b) the service mechanism, and (c) the queue discipline. The objective of this study is to observe a queuing system in action and prepare theoretical and simulation models that are used to estimate the impact of adjustments in the queue arrangement.
 
 
-### Queuing system in observation (Chad, Gale)
+### Queuing system in observation
 
 Group 1 data collected from Wellington Train Station the terminal station for Wellington city and the southern-most terminal of passenger trains in the North Island of New Zealand. The queuing system in observation is train station passenger ticketing booths. The ticketing booths provide sales and services for the public and passengers on the trains. The queuing system is located adjacent to a supermarket, cafe, bar, and is en-route between the passenger platforms and the Wellington City main bus terminal. Customers can enter the queuing system:
 
@@ -28,7 +28,7 @@ Group 1 data collected from Wellington Train Station the terminal station for We
 -   as pedestrian traffic from several street level and underground walkways
 
 
-### Methodology (Chad, Gale)
+### Methodology 
 
 The Wellington train station ticketing booths form a M/M/C system, where C (the number of service channels) ranges between 3 and 4. This system has a first-come, first-serve discipline, where servers pull customers from one queue. Data was collected over five sessions, 3 morning sessions (7:00 am to 8:30am) and 2 afternoon sessions (4:30 pm - 5:00 pm) across five separate dates. Each observation records the date and time (HH:MM:SS) in the system which includes:
 
@@ -41,7 +41,7 @@ An immediate arrival to the system with no queue present, the service time is ca
 
 Data collection at the Wellington Railway station was granted by a communications representative from Kiwi Rail through email, in agreement to observe from the 11th to the 13th of April 2022. Data collection dates were extended until enough data were gathered on condition that safety and health guidelines were met. Final date of observation was on the 27th of April 2022. 
 
-### Data Analysis (Chad, Gale)
+### Data Analysis
 
 One morning session failed to correctly collect data based on a M/M/C system, therefore was discarded from the final data, resulting in four sessions. A total of 403 observations were obtained. The data collected was manually transcribed and input into a csv file. Inter-arrival (time between each arrival in seconds) and service times (time spent being served in seconds) is calculated. 
 
@@ -50,7 +50,7 @@ An immediate arrival to the system with no queue present, the service time is ca
 
 The collected data was analysed from the csv file into R Studio, and from these the mean inter-arrival rate ($\lambda$) and service rate ($\mu$) are calculated. Inter-arrival rate is calculated as the sum of all inter-arrival times divided by the number of inter-arrival times and service time is calculated as the mean time a customer spends in service (i.e. does not include queuing time).
 
-**(CHAD)**
+
 ```{r read in data, include=FALSE}
 train.data <- read.csv("ProjectData-G1.csv")
 
@@ -485,28 +485,5 @@ From this initial analysis we conclude that our M/M/c queuing system has the fol
 
 1.  Inter-arrival times fit an exponential distribution with rate $\lambda =$ `r lamb`\
 2.  Service times fit an Erlang distribution with shape = 5 and rate $\frac {6}{\mu} =$ `r 6/mu`
-
-
-
-
-
-### Model 1
-
-
-
-
-
-
-### Model 2
-
-
-
-
-
-
-### Model 3
-
-
-
 
 
