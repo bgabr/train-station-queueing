@@ -1,0 +1,512 @@
+---
+title: "Queueing System of the Wellington Railway Station Ticket Booth"
+author: "Group 1: Chad Kakau, Gale Bueno"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2) # for plotting a bit easier
+# #install.packages("VGAM")
+# library(VGAM)
+# #install.packages("distr6")
+# library(distr6)
+library(ggthemes)
+theme_set(theme_pander())
+```
+
+### Introduction
+Queuing is a feature of contemporary living that we often encounter. Queuing arises whenever a system must be used for service by several jobs or customers, whether it be at restaurants or through the use of modern technology, with both the arrival and the service timings are assumed to be at random. The study of queuing is significant because it provides both a theoretical framework for the type of service that we would anticipate from a system and how the system is constructed to provide some defined level of service. Simple queuing systems are characterized by naming (a) the arrival pattern, (b) the service mechanism, and (c) the queue discipline. The objective of this study is to observe a queuing system in action and prepare theoretical and simulation models that are used to estimate the impact of adjustments in the queue arrangement.
+
+
+### Queuing system in observation (Chad, Gale)
+
+Group 1 data collected from Wellington Train Station the terminal station for Wellington city and the southern-most terminal of passenger trains in the North Island of New Zealand. The queuing system in observation is train station passenger ticketing booths. The ticketing booths provide sales and services for the public and passengers on the trains. The queuing system is located adjacent to a supermarket, cafe, bar, and is en-route between the passenger platforms and the Wellington City main bus terminal. Customers can enter the queuing system:
+
+-   after disembarking a passenger train
+-   as pedestrian traffic from several street level and underground walkways
+
+
+### Methodology (Chad, Gale)
+
+The Wellington train station ticketing booths form a M/M/C system, where C (the number of service channels) ranges between 3 and 4. This system has a first-come, first-serve discipline, where servers pull customers from one queue. Data was collected over five sessions, 3 morning sessions (7:00 am to 8:30am) and 2 afternoon sessions (4:30 pm - 5:00 pm) across five separate dates. Each observation records the date and time (HH:MM:SS) in the system which includes:
+
+-   time of arrival in the system,
+-   time of entering service,and
+-   and time of departing service, 
+
+
+An immediate arrival to the system with no queue present, the service time is calculated (service start and end of service). In the presence of a queue, time of arrival in the queue,service start time (departure from the queue), and end of service time is collected. To make collection of data easier, the lane of service was included in the collection. This allows observers to collect data quicker during peak hours. The lane number is essential, as the end of service time of a customer, will be the start time of the next customer who is served in the same lane. Data was recorded using pen and paper.
+
+Data collection at the Wellington Railway station was granted by a communications representative from Kiwi Rail through email, in agreement to observe from the 11th to the 13th of April 2022. Data collection dates were extended until enough data were gathered on condition that safety and health guidelines were met. Final date of observation was on the 27th of April 2022. 
+
+### Data Analysis (Chad, Gale)
+
+One morning session failed to correctly collect data based on a M/M/C system, therefore was discarded from the final data, resulting in four sessions. A total of 403 observations were obtained. The data collected was manually transcribed and input into a csv file. Inter-arrival (time between each arrival in seconds) and service times (time spent being served in seconds) is calculated. 
+
+An immediate arrival to the system with no queue present, the service time is calculated (service start and end of service). In the presence of a queue, time of arrival in the queue (departure from the queue), service start time, and end of service time is collected. To make collection of data easier, the lane of service of customers was collected. This allows observers to collect data quicker during peak hours. The lane number is essential, as the end of service time of a customer, will be the start time of the next customer who is served in the same lane. A total of 403 observations were obtained. The data collected was manually transcribed into a csv file and inter-arrival (time between each arrival in seconds) and service times (time spent being served in seconds) are calculated. 
+
+
+The collected data was analysed from the csv file into R Studio, and from these the mean inter-arrival rate ($\lambda$) and service rate ($\mu$) are calculated. Inter-arrival rate is calculated as the sum of all inter-arrival times divided by the number of inter-arrival times and service time is calculated as the mean time a customer spends in service (i.e. does not include queuing time).
+
+**(CHAD)**
+```{r read in data, include=FALSE}
+train.data <- read.csv("ProjectData-G1.csv")
+
+#add factors to sessions and servers
+train.data$Session <- factor(train.data$Session)
+train.data$Servers <- factor(train.data$Servers)
+train.data$Lane <- factor(train.data$Lane)
+
+# scale the inter arrivals and service times
+train.data$arr_scaled <- scale(train.data$inter.arr.sec)
+train.data$serv_scaled <- scale(train.data$Serv_time_sec)
+
+#m majority of data 
+train.data <- train.data[train.data$inter.arr.sec<=200,]
+# objects to bin interarrival data
+n_bins <- 100
+
+
+str(train.data)
+```
+
+### Inter-arrival Time
+
+Inter-arrival rate is calculated as the sum of all inter-arrival times divided by the number of inter-arrival times.
+
+```{r calculate lambda}
+# estimate parameters for density plot, assuming exponential distribution
+lamb <- mean(train.data$inter.arr.sec)
+lamb
+```
+
+The inter-arrival times are plotted here, showing a histogram of the data, density function of the actual data and the theoretical exponential distribution, assuming $\lambda =$ `r lamb`.
+
+### Plotting the inter arrival times
+
+```{r plot interarrival times as histogram}
+# length of vectors for plotting
+n_train <- length(train.data$inter.arr.sec)
+
+library(ggplot2)
+set.seed(300212228)
+
+# plot inter-arrival times actual density and theoretical density
+arr_dist_200 <- ggplot(train.data, aes(x = inter.arr.sec, )) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = n_bins) + 
+  geom_line(aes(y = ..density.., colour = "Sample"), 
+            stat = "density", 
+            size =1) + 
+  stat_function(aes(x = rexp(n_train), colour = "Exp(1/lambda)"),
+                fun = dexp, 
+                args = list(rate = 1/lamb),) +
+  
+  stat_function(aes(x = rgamma(n_train, shape = 2, rate = 1/lamb),
+                    colour = "Gamma(2, 1/lambda)"),
+                fun = dgamma, 
+                args = list(shape = 2, rate = 1/lamb),
+                ) +  
+  stat_function(aes(x = rgamma(n_train, shape = 2, rate = 2/lamb),
+                    colour = "Gamma(2, 2/lambda)"),
+                fun = dgamma, 
+                args = list(shape = 2, rate = 2/lamb),
+                ) +    
+  stat_function(aes(x = rgamma(n_train, shape = 2, rate = 3/lamb),
+                    colour = "Gamma(2, 3/lambda)"),
+                fun = dgamma, 
+                args = list(shape = 2, rate = 3/lamb),
+                ) +    
+  stat_function(aes(x = rgamma(n_train, shape = 3, rate = 2/lamb),
+                    colour = "Gamma(3, 2/lambda)"),
+                fun = dgamma, 
+                args = list(shape = 3, rate = 2/lamb),
+                ) 
+
+arr_dist_200 +
+  labs(title = "Inter-arrival times histogram and density \n 0-200 seconds",
+       x = "Inter-arrival time (s)",
+       colour = "Distributions") +
+  scale_x_continuous(limits = c(0, 200)) +
+  scale_y_continuous(limits = c(0, 0.04))
+
+
+```
+
+## Goodness of fit
+
+The inter-arrival time visually looks like a good fit to the exponential distribution, so we will begin by running a goodness of fit test for the data and set our rejection level to $\alpha = 0.05$.
+
+```{r chisquare for interarrival time exponential distribution}
+# establish intervals for bins
+arr_ints <- round(seq(from = 0, to = 200, by = 200/n_bins))
+arr_bins <- factor(findInterval(train.data$inter.arr.sec, arr_ints))
+
+# create reference object to hold random variates from different distributions
+# Exp(1/lamb), Gamma(2, 1/lamb), Gamma(2, 2/lamb)
+set.seed(1234)
+arr_exp_1lamb <- factor(round(rexp(n_train, rate = 1/lamb)))
+arr_gam_2_1lamb <- factor(round(rgamma(n_train, shape = 2, rate = 1/lamb)))
+arr_gam_2_2lamb <- factor(round(rgamma(n_train, shape = 2, rate = 2/lamb)))
+arr_gam_2_3lamb <- factor(round(rgamma(n_train, shape = 2, rate = 3/lamb)))
+arr_gam_3_2lamb <- factor(round(rgamma(n_train, shape = 3, rate = 2/lamb)))
+
+# bin each object by interval
+arr_exp_1_bin <- factor(findInterval(arr_exp_1lamb, arr_ints))
+arr_gam_21_bin <- factor(findInterval(arr_gam_2_1lamb, arr_ints))
+arr_gam_22_bin <- factor(findInterval(arr_gam_2_2lamb, arr_ints))
+arr_gam_23_bin <- factor(findInterval(arr_gam_2_3lamb, arr_ints))
+arr_gam_32_bin <- factor(findInterval(arr_gam_2_2lamb, arr_ints))
+
+# store chisq.test results as object
+arr_chi_e1 <- chisq.test(x = arr_bins, y = arr_exp_1_bin)
+arr_chi_g21 <- chisq.test(x = arr_bins, y = arr_gam_21_bin)
+arr_chi_g22 <- chisq.test(x = arr_bins, y = arr_gam_22_bin)
+arr_chi_g23 <- chisq.test(x = arr_bins, y = arr_gam_23_bin)
+arr_chi_g32 <- chisq.test(x = arr_bins, y = arr_gam_32_bin)
+
+
+# display chisq.test results
+arr_chi_e1
+arr_chi_g21
+arr_chi_g22
+arr_chi_g23
+arr_chi_g32
+
+```
+
+### Results of the chi-square test:
+
+##### Testing for $Exp(\frac {1}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Exp(\frac {1}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Exp(\frac {1}{\lambda})$ distribution
+
+Since $p=$ `r arr_chi_e1$p.value` `r if (arr_chi_e1$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (arr_chi_g22$p.value > 0.05) {"is"} else {"is not"}` consistent with data from an exponential distribution with the $Exp(\frac {1}{\lambda})$ distribution.
+
+##### Testing for $Gamma(2, \frac {1}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(2, \frac {1}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(2, \frac {1}{\lambda})$ distribution
+
+Since $p=$ `r arr_chi_g21$p.value`, `r if (arr_chi_g21$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (arr_chi_g22$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(2, \frac {1}{\lambda})$ distribution.
+
+##### Testing for $Gamma(2, \frac {2}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(2, \frac {2}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(2, \frac {2}{\lambda})$ distribution
+
+Since $p=$ `r arr_chi_g22$p.value`, `r if (arr_chi_g22$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (arr_chi_g22$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(2, \frac {2}{\lambda})$ distribution.
+
+##### Testing for $Gamma(2, \frac {3}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(2, \frac {3}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(2, \frac {3}{\lambda})$ distribution
+
+Since $p=$ `r arr_chi_g23$p.value`, `r if (arr_chi_g23$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (arr_chi_g23$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(2, \frac {3}{\lambda})$ distribution.
+
+##### Testing for $Gamma(3, \frac {2}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(3, \frac {2}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(3, \frac {2}{\lambda})$ distribution
+
+Since $p=$ `r arr_chi_g32$p.value`, `r if (arr_chi_g32$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (arr_chi_g23$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(3, \frac {2}{\lambda})$ distribution.
+
+The highest p-value is `r max(arr_chi_g32$p.value, arr_chi_g23$p.value, arr_chi_g22$p.value, arr_chi_g21$p.value, arr_chi_e1$p.value)` so we select the distribution:
+
+$Gamma(3, \frac {2}{\lambda})$
+
+### Fitting a distribution
+
+Initial visual inspection of the plot shows that the data may fit a Gamma distribution with shape = 2, rate = $\frac {2}{\lambda}$. This distribution is equivalent to an Erlang distribution with shape = 2, rate = $\frac {2}{\lambda}$.
+
+```{r plot interarrival times with best fit, include=FALSE}
+# plot inter-arrival times actual density and theoretical density
+arr_dist_fin <- ggplot(train.data, aes(x = inter.arr.sec, )) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = n_bins) + 
+  geom_line(aes(y = ..density.., colour = "Sample"), 
+            stat = "density", 
+            size =1) + 
+  scale_x_continuous(limits = c(0, 75)) +
+  scale_y_continuous(limits = c(0, 0.04)) +
+  stat_function(aes(x = rexp(n_train, rate = 1/lamb),
+                    colour = "Exp(1/lambda)"),
+                fun = dexp, 
+                args = list(rate = 1/lamb),
+                ) +    
+  stat_function(aes(x = rgamma(n_train, shape = 2, rate = 1/lamb),
+                    colour = "Gamma(2, 1/lambda)"),
+                fun = dgamma, 
+                args = list(shape = 2, rate = 1/lamb),
+                ) +  
+  stat_function(aes(x = rgamma(n_train, shape = 2, rate = 2/lamb),
+                colour = "Gamma(2, 2/lambda)"),
+                fun = dgamma, 
+                args = list(shape = 2, rate = 2/lamb),
+                ) + 
+  theme_classic() +
+  labs(title = "Inter-arrival times histogram and density \n reduced 0 - 75 sec",
+       x = "Inter-arrival time (s)",
+       colour = "Distributions")
+
+arr_dist_fin
+
+```
+
+###### 
+
+## Service Time
+
+The service time is calculated as the mean time a customer spends in service (i.e. does not include queuing time). \`
+
+```{r}
+# calculate mean service time as mu
+mu <- mean(train.data$Serv_time_sec)
+mu
+```
+
+The service time is plotted here, showing a histogram of the service times, density plot of the actual data and theoretical density of the exponential distribution with $\mu=$ `r mu`.
+
+```{r, include=FALSE}
+# plot service times, actual density and theoretical density 
+srv_dists <- ggplot(train.data, aes(x = Serv_time_sec, )) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = n_bins, 
+                 alpha = 0.4) + 
+  geom_line(aes(y = ..density.., 
+            colour = "Sample"), 
+            stat = "density", 
+            size = 1) + 
+
+  stat_function(aes(x = rgamma(1:length(Serv_time_sec), shape = 4), 
+                colour = "Gamma(4, 5/mu)"), 
+                fun = dgamma, 
+                args = list(shape= 4, rate = 5/mu)) +
+  stat_function(aes(x = rexp(1:length(Serv_time_sec)),
+                colour = "Exp(1/mu)"),
+                fun = dexp,
+                args = list(rate = 1/mu),) +
+  stat_function(aes(x = rgamma(1:length(Serv_time_sec), shape = 3),
+                colour = "Gamma(3, 4/mu)"),
+                fun = dgamma,
+                args = list(shape= 3, rate = 4/mu)) +
+
+  stat_function(aes(x = rgamma(1:length(Serv_time_sec), shape = 4),
+                colour = "Gamma(4, 4/mu)"),
+                fun = dgamma,
+                args = list(shape= 4, rate = 4/mu)) +
+
+  stat_function(aes(x = rgamma(1:length(Serv_time_sec), shape = 5),
+                colour = "Gamma(5, 5/mu)"),
+                fun = dgamma,
+                args = list(shape= 5, rate = 5/mu)) +
+  stat_function(aes(x = rgamma(1:length(Serv_time_sec), shape = 6),
+                colour = "Gamma(5, 6/mu)"),
+                fun = dgamma,
+                args = list(shape= 5, rate = 6/mu)) +
+  stat_function(aes(x = rgamma(1:length(Serv_time_sec), shape = 6),
+                colour = "Gamma(6, 5/mu)"),
+                fun = dgamma,
+                args = list(shape= 6, rate = 5/mu))
+
+# display the plot
+srv_dists  +
+  theme_classic() +
+  labs(title = "Service times histogram and density \n 0-200 seconds",
+       x = "Service time (s)",
+       colour = "Distributions")
+
+
+```
+
+Visually the service times look like they could be from a gamma distribution but it's difficult to fit a plot of the gamma density function to the scale of the histogram.
+
+## Goodness of fit
+
+The service time visually looks like a possible fit to the exponential distribution, so we will begin by running a goodness of fit test for the data and set our rejection level to $\alpha = 0.05$.
+
+$H_0:$ The data is consistent with the Exponential distribution\
+$H_1:$ The data is not consistent with the Exponential distribution
+
+```{r chisquare for service times}
+# chi-square test for our data
+# establish intervals for bins
+srv_ints <- round(seq(from = 0, to = 200, by = 200/n_bins))
+srv_bins <- factor(findInterval(train.data$Serv_time_sec, arr_ints))
+
+# create reference object to hold random variates from different distributions
+# Exp(1/lamb), Gamma(2, 1/lamb), Gamma(2, 2/lamb)
+set.seed(1234)
+srv_exp_1mu <- factor(round(rexp(n_train, rate = 1/mu)))
+srv_gam_3_4mu <- factor(round(rgamma(n_train, shape = 3, rate = 4/mu)))
+srv_gam_4_4mu <- factor(round(rgamma(n_train, shape = 4, rate = 4/mu)))
+srv_gam_4_5mu <- factor(round(rgamma(n_train, shape = 4, rate = 5/mu)))
+srv_gam_5_5mu <- factor(round(rgamma(n_train, shape = 5, rate = 5/mu)))
+srv_gam_5_6mu <- factor(round(rgamma(n_train, shape = 5, rate = 6/mu)))
+srv_gam_6_5mu <- factor(round(rgamma(n_train, shape = 6, rate = 5/mu)))
+
+
+# bin each object by interval
+srv_exp_1_bin <- factor(findInterval(srv_exp_1mu, srv_ints))
+srv_gam_34_bin <- factor(findInterval(srv_gam_3_4mu, srv_ints))
+srv_gam_44_bin <- factor(findInterval(srv_gam_4_4mu, srv_ints))
+srv_gam_45_bin <- factor(findInterval(srv_gam_4_5mu, srv_ints))
+srv_gam_55_bin <- factor(findInterval(srv_gam_5_5mu, srv_ints))
+srv_gam_56_bin <- factor(findInterval(srv_gam_5_6mu, srv_ints))
+srv_gam_65_bin <- factor(findInterval(srv_gam_6_5mu, srv_ints))
+
+# store chisq.test results as object
+srv_chi_e1 <- chisq.test(x = srv_bins, y = srv_exp_1_bin)
+srv_chi_g34 <- chisq.test(x = srv_bins, y = srv_gam_34_bin)
+srv_chi_g44 <- chisq.test(x = srv_bins, y = srv_gam_44_bin)
+srv_chi_g45 <- chisq.test(x = srv_bins, y = srv_gam_45_bin)
+srv_chi_g55 <- chisq.test(x = srv_bins, y = srv_gam_55_bin)
+srv_chi_g56 <- chisq.test(x = srv_bins, y = srv_gam_56_bin)
+srv_chi_g65 <- chisq.test(x = srv_bins, y = srv_gam_65_bin)
+
+# display chisq.test results
+srv_chi_e1
+srv_chi_g34
+srv_chi_g44
+srv_chi_g45
+srv_chi_g55
+srv_chi_g56
+srv_chi_g65
+
+
+
+```
+
+### Results of the chi-square test:
+
+##### Testing for $Exp(\frac {1}{\mu})$ distribution:
+
+$H_0:$ The data is consistent with the $Exp(\frac {1}{\mu})$ distribution\
+$H_1:$ The data is not consistent with the $Exp(\frac {1}{\mu})$ distribution
+
+Since $p=$ `r srv_chi_e1$p.value` `r if (srv_chi_e1$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (srv_chi_e1$p.value > 0.05) {"is"} else {"is not"}` consistent with data from an exponential distribution with the $Exp(\frac {1}{\mu})$ distribution.
+
+##### Testing for $Gamma(3, \frac {4}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(3, \frac {4}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(3, \frac {4}{\lambda})$ distribution
+
+Since $p=$ `r srv_chi_g34$p.value`, `r if (srv_chi_g34$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (srv_chi_g34$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(3, \frac {4}{\lambda})$ distribution.
+
+######## 
+
+##### Testing for $Gamma(4, \frac {4}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(4, \frac {4}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(4, \frac {4}{\lambda})$ distribution
+
+Since $p=$ `r srv_chi_g44$p.value`, `r if (srv_chi_g44$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (srv_chi_g44$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(4, \frac {4}{\lambda})$ distribution.
+
+##### Testing for $Gamma(4, \frac {5}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(4, \frac {5}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(4, \frac {5}{\lambda})$ distribution
+
+Since $p=$ `r srv_chi_g45$p.value`, `r if (srv_chi_g45$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (srv_chi_g45$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(4, \frac {5}{\lambda})$ distribution.
+
+##### Testing for $Gamma(5, \frac {5}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(5, \frac {5}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(5, \frac {5}{\lambda})$ distribution
+
+Since $p=$ `r srv_chi_g55$p.value`, `r if (srv_chi_g55$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (srv_chi_g55$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(5, \frac {5}{\lambda})$ distribution.
+
+##### Testing for $Gamma(5, \frac {6}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(5, \frac {6}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(5, \frac {6}{\lambda})$ distribution
+
+Since $p=$ `r srv_chi_g56$p.value`, `r if (srv_chi_g56$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (srv_chi_g56$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(5, \frac {6}{\lambda})$ distribution.
+
+##### Testing for $Gamma(6, \frac {5}{\lambda})$ distribution:
+
+$H_0:$ The data is consistent with the $Gamma(6, \frac {5}{\lambda})$ distribution\
+$H_1:$ The data is not consistent with the $Gamma(6, \frac {5}{\lambda})$ distribution
+
+Since $p=$ `r srv_chi_g65$p.value`, `r if (srv_chi_g65$p.value > 0.05) {"is greater than 0.05 we fail to reject"} else {"is less than  0.05 we reject"}` the null hypothesis and conclude that the inter-arrival time `r if (srv_chi_g65$p.value > 0.05) {"is"} else {"is not"}` consistent with the $Gamma(6, \frac {5}{\lambda})$ distribution.
+
+The highest p-value is `r max(srv_chi_e1$p.value, srv_chi_g34$p.value, srv_chi_g44$p.value, srv_chi_g45$p.value, srv_chi_g55$p.value, srv_chi_g56$p.value, srv_chi_g65$p.value)`
+
+so we select the distribution:
+
+$Gamma(5, \frac {6}{\lambda})$
+
+```{r srvtimes focussed plot}
+# display a focussed plot
+srv_dist_75 <- srv_dists +  scale_x_continuous(limits = c(0, 75)) +
+  scale_y_continuous(limits = c(0, 0.05))  +
+  theme_classic() +
+  labs(title = "Service times histogram and density \n reduced scale 0 - 75 seconds",
+       x = "Service time (s)",
+       colour = "Distributions")
+srv_dist_75
+
+```
+
+This is equivalent to an Erlang distribution with parameters $Erlang(5, \frac {6}{\mu})$.
+
+```{r selected distribution for srvtimes}
+
+
+# plot service times, actual density and theoretical density 
+ggplot(train.data, aes(x = Serv_time_sec, )) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 50, 
+                 alpha = 0.4) + 
+  stat_function(aes(x = rexp(n_train),
+                colour = "Exp(1/mu)"),
+                fun = dexp,
+                args = list(rate = 1/mu)) +
+  stat_function(aes(x = rgamma(1:length(Serv_time_sec), shape = 5),
+                colour = "Gamma(5, 6/mu)"),
+                fun = dgamma,
+                args = list(shape= 5, rate = 6/mu)) +
+  geom_line(aes(y = ..density.., 
+            colour = "Sample"), 
+            stat = "density", 
+            size = 1) + 
+  theme_classic() +
+  labs(title = "Service times histogram and density",
+       x = "Service time (s)",
+       colour = "Densities")
+```
+
+### Comments:
+
+From this initial analysis we conclude that our M/M/c queuing system has the following distributions:
+
+1.  Inter-arrival times fit an exponential distribution with rate $\lambda =$ `r lamb`\
+2.  Service times fit an Erlang distribution with shape = 5 and rate $\frac {6}{\mu} =$ `r 6/mu`
+
+
+
+
+
+### Model 1
+
+
+
+
+
+
+### Model 2
+
+
+
+
+
+
+### Model 3
+
+
+
+
+
